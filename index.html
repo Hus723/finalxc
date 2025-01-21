@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RASH MONITOR</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            padding: 10px;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 90vw;
+            max-width: 400px;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            transform: rotate(45deg);
+            z-index: -1;
+            animation: animateBackground 6s linear infinite;
+        }
+        @keyframes animateBackground {
+            0% {
+                transform: rotate(45deg) translateY(0);
+            }
+            100% {
+                transform: rotate(45deg) translateY(-100%);
+            }
+        }
+        .data-item {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+        .data-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .data-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            width: 30px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .data-item:hover .data-icon {
+            transform: scale(1.2);
+        }
+        .data-label {
+            flex: 1;
+            margin-left: 10px;
+            font-size: 16px;
+            color: #fff;
+        }
+        .data-value {
+            font-size: 22px;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: color 0.3s ease;
+        }
+        .data-unit {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .header {
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.8), rgba(0, 86, 179, 0.8));
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 0;
+        }
+        .footer {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* نبضة قلب متحركة */
+        .heart-beat {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            color: rgba(255, 0, 0, 0.4);
+            animation: heartBeat 1.5s infinite;
+            z-index: 0;
+        }
+        @keyframes heartBeat {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* ألوان مخصصة لكل رمز معلمة */
+        #bodyTemp .data-icon {
+            color: #F97E00; /* برتقالي */
+        }
+        #roomTemp .data-icon {
+            color: #00BFFF; /* أزرق فاتح */
+        }
+        #humidity .data-icon {
+            color: #32CD32; /* أخضر */
+        }
+        #heartRate .data-icon {
+            color: #FF0000; /* أحمر */
+        }
+        #spo2 .data-icon {
+            color: #01F7D2; /* بنفسجي */
+        }
+
+        /* استعلامات الوسائط للشاشات الصغيرة */
+        @media (max-width: 576px) {
+            .header h1 {
+                font-size: 24px;
+            }
+            .data-item {
+                padding: 12px;
+            }
+            .data-icon {
+                font-size: 22px;
+            }
+            .data-value {
+                font-size: 20px;
+            }
+            .data-unit {
+                font-size: 16px;
+            }
+        }
+
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .dark-mode-toggle i {
+            font-size: 18px;
+            color: #fff;
+        }
+        body.dark-mode {
+            background: linear-gradient(135deg, #222, #333);
+            color: #fff;
+        }
+        .card.dark-mode {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .data-item.dark-mode {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .header.dark-mode {
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.3), rgba(0, 86, 179, 0.3));
+        }
+        .footer.dark-mode {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        .dark-mode-toggle.active {
+            background-color: #fff;
+        }
+        .dark-mode-toggle.active i {
+            color: #000;
+        }
+
+        /* قائمة هامبرجر */
+        .hamburger-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .hamburger-menu i {
+            font-size: 24px;
+            color: #fff;
+        }
+
+        /* صفحة إدخال معلومات الشبكة */
+        .config-page {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .config-page.active {
+            display: flex;
+        }
+        .config-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .config-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .config-form button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <!-- قائمة هامبرجر -->
+            <div class="hamburger-menu" onclick="toggleConfigPage()">
+                <i class="fas fa-bars"></i>
+            </div>
+
+            <div class="header">
+                <h1><i class="fas fa-heartbeat"></i> RASH MONITOR</h1>
+            </div>
+            <div class="card-body">
+                <div class="data-item" id="bodyTemp">
+                    <div>
+                        <i class="fas fa-thermometer-half data-icon"></i>
+                        <span class="data-label">Body Temperature</span>
+                    </div>
+                    <div>
+                        <span class="data-value">--</span>
+                        <span class="data-unit">°C</span>
+                    </div>
+                </div>
+                <div class="data-item" id="roomTemp">
+                    <div>
+                        <i class="fas fa-temperature-low data-icon"></i>
+                        <span class="data-label">Room Temperature</span>
+                    </div>
+                    <div>
+                        <span class="data-value">--</span>
+                        <span class="data-unit">°C</span>
+                    </div>
+                </div>
+                <div class="data-item" id="humidity">
+                    <div>
+                        <i class="fas fa-tint data-icon"></i>
+                        <span class="data-label">Humidity</span>
+                    </div>
+                    <div>
+                        <span class="data-value">--</span>
+                        <span class="data-unit">%</span>
+                    </div>
+                </div>
+                <div class="data-item" id="heartRate">
+                    <div>
+                        <i class="fas fa-heart data-icon"></i>
+                        <span class="data-label">Heart Rate</span>
+                    </div>
+                    <div>
+                        <span class="data-value">--</span>
+                        <span class="data-unit">BPM</span>
+                    </div>
+                </div>
+                <div class="data-item" id="spo2">
+                    <div>
+                        <i class="fas fa-lungs data-icon"></i>
+                        <span class="data-label">SpO2</span>
+                    </div>
+                    <div>
+                        <span class="data-value">--</span>
+                        <span class="data-unit">%</span>
+                    </div>
+                </div>
+                <div class="data-item" id="wifiStatus">
+                    <div>
+                        <i class="fas fa-wifi data-icon"></i>
+                        <span class="data-label">Wi-Fi Status</span>
+                    </div>
+                    <div>
+                        <span class="data-value" id="wifiStatusValue">--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <p class="mb-0">Developed by Hossam Mohamed</p>
+            </div>
+        </div>
+
+        <!-- صفحة إدخال معلومات الشبكة -->
+        <div class="config-page" id="configPage">
+            <div class="config-form">
+                <h3>Wi-Fi Configuration</h3>
+                <p>Current SSID: <span id="currentSSID">--</span></p>
+                <input type="text" id="ssid" placeholder="Enter SSID" required>
+                <input type="password" id="password" placeholder="Enter Password" required minlength="8">
+                <button onclick="sendWiFiCredentials()">Update Wi-Fi</button>
+                <button onclick="toggleConfigPage()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const socket = io();
+
+        // القيم القصوى لكل معلمة
+        const maxValues = {
+            bodyTemp: 40,    // درجة حرارة الجسم القصوى
+            roomTemp: 40,    // درجة حرارة الغرفة القصوى
+            humidity: 100,   // الرطوبة القصوى
+            heartRate: 150,  // معدل ضربات القلب القصوى
+            spo2: 100        // نسبة الأكسجين القصوى
+        };
+
+        // تأكد من اتصال Socket.IO
+        socket.on('connect', () => {
+            console.log("Connected to server");
+        });
+
+        socket.on('disconnect', () => {
+            console.log("Disconnected from server");
+        });
+
+        // تحديث البيانات من الخادم
+        socket.on('data', (data) => {
+            console.log("Received data:", data);
+
+            // تحديث القيم مع تغيير اللون
+            updateValue('bodyTemp', data.bodyTemp, maxValues.bodyTemp);
+            updateValue('roomTemp', data.roomTemp, maxValues.roomTemp);
+            updateValue('humidity', data.humidity, maxValues.humidity);
+            updateValue('heartRate', data.heartRate, maxValues.heartRate, true); // true لأنه متعلق بالقلب
+            updateValue('spo2', data.spo2, maxValues.spo2, true); // true لأنه متعلق بالأكسجين
+        });
+
+        socket.on('wifi-status', (status) => {
+            const wifiStatusElement = document.getElementById('wifiStatusValue');
+            wifiStatusElement.textContent = status;
+            wifiStatusElement.style.color = status === "Connected" ? "#32CD32" : "#FF0000";
+        });
+
+        function updateValue(elementId, value, maxValue, isCritical = false) {
+            const element = document.getElementById(elementId);
+            const valueElement = element.querySelector('.data-value');
+
+            // التحقق من وجود قيمة
+            if (value === null || value === undefined || value === "--") {
+                valueElement.textContent = "No Data";
+                valueElement.style.color = "#FF0000"; // لون أحمر للإشارة إلى عدم وجود قراءة
+                return;
+            }
+
+            // تحديث النص
+            valueElement.textContent = value;
+
+            // تغيير اللون بناءً على القيمة
+            if (isCritical) {
+                if (value < 60 || value > 120) { // مثال لمعدل ضربات القلب
+                    valueElement.style.color = "#FF0000"; // لون أحمر للقيم الحرجة
+                } else {
+                    valueElement.style.color = "#32CD32"; // لون أخضر للقيم الطبيعية
+                }
+            } else {
+                const percentage = (value / maxValue) * 100;
+                const color = getColorForPercentage(percentage);
+                valueElement.style.color = color;
+            }
+        }
+
+        // دالة لتحديد اللون بناءً على النسبة المئوية
+        function getColorForPercentage(percentage) {
+            // تدرج لوني من الأصفر الفاتح إلى الأصفر الداكن
+            const lightness = 100 - (percentage / 2); // تقليل الإضاءة مع زيادة النسبة
+            return `hsl(60, 100%, ${lightness}%)`; // اللون الأصفر
+        }
+
+        // عرض/إخفاء صفحة الإعدادات
+        function toggleConfigPage() {
+            const configPage = document.getElementById('configPage');
+            configPage.classList.toggle('active');
+        }
+
+        // إرسال بيانات Wi-Fi عبر الإنترنت
+        async function sendWiFiCredentials() {
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+
+            if (!ssid || !password || password.length < 8) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Please enter a valid SSID and Password (at least 8 characters)',
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch('/update-wifi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ssid, password }),
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Wi-Fi credentials updated successfully!',
+                    });
+                    toggleConfigPage(); // إغلاق صفحة الإعدادات بعد الإرسال
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to update Wi-Fi credentials',
+                    });
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to update Wi-Fi credentials',
+                });
+            }
+        }
+
+        // Dark Mode Toggle
+        const darkModeToggle = document.querySelector('.dark-mode-toggle');
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.card').classList.toggle('dark-mode');
+            darkModeToggle.classList.toggle('active');
+        });
+    </script>
+</body>
+</html>
